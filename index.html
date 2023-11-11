@@ -41,23 +41,13 @@
   <body>
     <h1>PDF name changer</h1>
     <div class="pdfwork">
-      <span>Select PDF</span>
       <input type="file" class="selectpdf" id="inpFile" multiple />
-      <button class="upload">Upload</button>
-      <div class="afterupload">
-        <span>Select Page</span>
-        <select class="selectpage" id="selectPage"></select>
-        <a href="" class="download" download>Download PDF text</a>
-        <textarea class="pdftext" id="pdfText"></textarea>
+      <button class="upload">Implement changes</button>
       </div>
     </div>
     <script>
       let pdfinput = document.querySelector("input[type=file]");
       let upload = document.querySelector(".upload");
-      let afterupload = document.querySelector(".afterupload");
-      let select = document.querySelector(".selectpage");
-      let download = document.querySelector(".download");
-      let pdftext = document.querySelector(".pdftext");
       upload.addEventListener("click", () => {
         console.log(pdfinput.files);
         for (i in pdfinput.files) {
