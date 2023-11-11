@@ -42,7 +42,7 @@
     <h1>PDF name changer</h1>
     <div class="pdfwork">
       <span>Select PDF</span>
-      <input type="file" class="selectpdf" id="inpFile" multiple/>
+      <input type="file" class="selectpdf" id="inpFile" multiple />
       <button class="upload">Upload</button>
       <div class="afterupload">
         <span>Select Page</span>
@@ -59,23 +59,27 @@
       let download = document.querySelector(".download");
       let pdftext = document.querySelector(".pdftext");
       upload.addEventListener("click", () => {
-        let file = pdfinput.files[0];
-        console.log(file);
         console.log(pdfinput.files);
-        
-        if (file != undefined && file.type == "application/pdf") {
-          const fr = new FileReader();
-          fr.readAsDataURL(file);
-          fr.onload = () => {
-            let res = fr.result;
-            (async function () {
-              newName = await extractText(res);
-              console.log(newName);
-              downloadFile(file, newName);
-            })();
-          };
-        } else {
-          alert("select a valid file");
+        for (i in pdfinput.files) {
+          console.log(i);
+          let file = pdfinput.files[i];
+          console.log(file);
+
+          if (file != undefined && file.type == "application/pdf") {
+            const fr = new FileReader();
+            fr.readAsDataURL(file);
+            fr.onload = () => {
+              let res = fr.result;
+              (async function () {
+                newName = await extractText(res);
+                console.log(newName);
+                await downloadFile(file, newName);
+              })();
+            };
+          } else if (i == "length") {break;} 
+          else {
+            alert("select a valid file");
+          }
         }
       });
       async function extractText(url) {
@@ -93,23 +97,22 @@
       }
 
       function downloadFile(blob, name) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = name;
-          // This is required for one-off downloads of the blob content
-          const clickHandler = () => {
-            setTimeout(() => {
-              URL.revokeObjectURL(url);
-              removeEventListener("click", clickHandler);
-            }, 150);
-          };
-          // Add the click event listener on the anchor element
-          // Comment out this line if you don't want a one-off download of the blob content
-          a.addEventListener("click", clickHandler, false);
-        //   a.click();
-        }
-        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        // This is required for one-off downloads of the blob content
+        const clickHandler = () => {
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+            removeEventListener("click", clickHandler);
+          }, 1);
+        };
+        // Add the click event listener on the anchor element
+        // Comment out this line if you don't want a one-off download of the blob content
+        a.addEventListener("click", clickHandler, false);
+        a.click();
+      }
     </script>
   </body>
 </html>
