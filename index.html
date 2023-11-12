@@ -18,43 +18,34 @@
         width: 100%;
         text-align: center;
       }
-
-      .pdfwork,
-      .afterupload {
+      .pdfwork {
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: column;
         width: 100%;
       }
-
       .pdfwork * {
         margin-top: 5px;
       }
-
-      .afterupload {
-        display: none;
+      #message {
+        text-align: center;
       }
     </style>
   </head>
 
   <body>
-    <h1>PDF name changer</h1>
+    <h1>PDF name changer ver0.01</h1>
     <div class="pdfwork">
-      <input type="file" class="selectpdf" id="inpFile" multiple />
+      <input type="file" class="selectpdf" id="inpFiles" multiple />
       <button class="upload">Implement changes</button>
-      </div>
     </div>
+    <div id="message"></div>
     <script>
       let pdfinput = document.querySelector("input[type=file]");
       let upload = document.querySelector(".upload");
       upload.addEventListener("click", () => {
-        console.log(pdfinput.files);
-        for (i in pdfinput.files) {
-          console.log(i);
-          let file = pdfinput.files[i];
-          console.log(file);
-
+        for (file of pdfinput.files) {
           if (file != undefined && file.type == "application/pdf") {
             const fr = new FileReader();
             fr.readAsDataURL(file);
@@ -62,12 +53,15 @@
               let res = fr.result;
               (async function () {
                 newName = await extractText(res);
-                console.log(newName);
-                await downloadFile(file, newName);
+                if (newName) {
+                  await downloadFile(file, newName);
+                } else {
+                  document.getElementById("message").innerHTML =
+                    file.name + " doesn't include JPISO on first page";
+                }
               })();
             };
-          } else if (i == "length") {break;} 
-          else {
+          } else {
             alert("select a valid file");
           }
         }
@@ -96,7 +90,7 @@
           setTimeout(() => {
             URL.revokeObjectURL(url);
             removeEventListener("click", clickHandler);
-          }, 1);
+          }, 100);
         };
         // Add the click event listener on the anchor element
         // Comment out this line if you don't want a one-off download of the blob content
