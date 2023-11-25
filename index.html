@@ -82,13 +82,15 @@
                   listFiles +=
                     '"C:\Program Files (x86)\Adobe\Reader 11.0\Reader\AcroRd32.exe" /N /T ' +
                     newName +
-                    "\\lgs-print01\LGS-PRT-BRK9\n";
+                    " \\lgs-print01\LGS-PRT-BRK9\n";
                 } else {
                   document.getElementById("message").innerHTML =
                     file.name + " doesn't include JPISO on first page";
                 }
                 if (count == pdfinput.files.length - 1) {
                   console.log(fbatch);
+                  let newLst = sortList(listFiles);
+                  console.log(newLst);
                 }
                 count += 1;
               })();
@@ -116,24 +118,25 @@
           return name;
         }
       }
+      function sortList(lst) {
+        let arr = lst.split(/\r?\n/);
+        console.log(arr);
 
-      async function downloadFile(blob, name) {
-        const url = URL.createObjectURL(blob);
+        console.log(arr[0].substring(72, 75) + " " + arr.length);
+        for (let j = 1; j < arr.length - 1; j++) {
+          let key = arr[j];
+          let i = j - 1;
 
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        // This is required for one-off downloads of the blob content
-        // const clickHandler = () => {
-        //   setTimeout(() => {
-        //     URL.revokeObjectURL(url);
-        //     removeEventListener("click", clickHandler);
-        //   }, 400);
-        // };
-        // Add the click event listener on the anchor element
-        // Comment out this line if you don't want a one-off download of the blob content
-        //a.addEventListener("click", clickHandler, false);
-        a.click();
+          while (
+            i >= 0 &&
+            Number(arr[i].substring(72, 75)) > Number(key.substring(72, 75))
+          ) {
+            arr[i + 1] = arr[i];
+            i--;
+          }
+          arr[i + 1] = key;
+        }
+        return arr.join("\n");
       }
     </script>
   </body>
