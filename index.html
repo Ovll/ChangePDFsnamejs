@@ -7,8 +7,15 @@
     <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico" />
 
     <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"
-      integrity="sha512-ml/QKfG3+Yes6TwOzQb7aCNtJF4PUyha6R3w8pSTo/VJSywl7ZreYvvtUso7fKevpsI+pYVVwnu82YO0q3V6eg=="
+      src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+      integrity="sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
+      integrity="sha512-BbrZ76UNZq5BhH7LL7pn9A4TKQpQeNCHOo65/akfelcIBbcVvYWOFQKPXIrykE3qZxYjmDX573oa4Ywsc7rpTw=="
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
@@ -54,17 +61,15 @@
     <script>
       let pdfinput = document.querySelector("input[type=file]");
       let upload = document.querySelector(".upload");
-      let afterupload = document.querySelector(".afterupload");
-      let select = document.querySelector(".selectpage");
-      let download = document.querySelector(".download");
-      let pdftext = document.querySelector(".pdftext");
+      let fbatch = "@ECHO OFF\n";
+      let listFiles = "";
+      let count = 0;
       upload.addEventListener("click", () => {
-        console.log(pdfinput.files);
         for (i in pdfinput.files) {
-          console.log(i);
-          let file = pdfinput.files[i];
-          console.log(file);
-
+          if (i == "length") {
+            break;
+          }
+          const file = pdfinput.files[i];
           if (file != undefined && file.type == "application/pdf") {
             const fr = new FileReader();
             fr.readAsDataURL(file);
@@ -72,12 +77,23 @@
               let res = fr.result;
               (async function () {
                 newName = await extractText(res);
-                console.log(newName);
-                await downloadFile(file, newName);
+                if (newName) {
+                  fbatch += "ren " + file.name + " " + newName + ".pdf\n";
+                  listFiles +=
+                    '"C:\Program Files (x86)\Adobe\Reader 11.0\Reader\AcroRd32.exe" /N /T ' +
+                    newName +
+                    "\\lgs-print01\LGS-PRT-BRK9\n";
+                } else {
+                  document.getElementById("message").innerHTML =
+                    file.name + " doesn't include JPISO on first page";
+                }
+                if (count == pdfinput.files.length - 1) {
+                  console.log(fbatch);
+                }
+                count += 1;
               })();
             };
-          } else if (i == "length") {break;} 
-          else {
+          } else {
             alert("select a valid file");
           }
         }
@@ -91,26 +107,32 @@
           let txt = await page.getTextContent();
           let text = txt.items.map((s) => s.str).join("");
           let pos = text.indexOf("JPISO");
-          let name = text.substring(pos, pos + 11);
+          let name;
+          if (text.charAt(pos + 11) == "D" || text.charAt(pos + 11) == "S") {
+            name = text.substring(pos, pos + 12);
+          } else {
+            name = text.substring(pos, pos + 11);
+          }
           return name;
         }
       }
 
-      function downloadFile(blob, name) {
+      async function downloadFile(blob, name) {
         const url = URL.createObjectURL(blob);
+
         const a = document.createElement("a");
         a.href = url;
         a.download = name;
         // This is required for one-off downloads of the blob content
-        const clickHandler = () => {
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-            removeEventListener("click", clickHandler);
-          }, 1);
-        };
+        // const clickHandler = () => {
+        //   setTimeout(() => {
+        //     URL.revokeObjectURL(url);
+        //     removeEventListener("click", clickHandler);
+        //   }, 400);
+        // };
         // Add the click event listener on the anchor element
         // Comment out this line if you don't want a one-off download of the blob content
-        a.addEventListener("click", clickHandler, false);
+        //a.addEventListener("click", clickHandler, false);
         a.click();
       }
     </script>
