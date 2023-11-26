@@ -81,7 +81,7 @@
                   fbatch += "ren " + file.name + " " + newName + ".pdf\n";
                   listFiles +=
                     '"C:\\Program Files (x86)\\Adobe\\Reader 11.0\\Reader\\AcroRd32.exe" /N /T ' +
-                    newName +
+                    newName + '.pdf' +
                     " \\\\lgs-print01\\LGS-PRT-BRK9\n";
                 } else {
                   document.getElementById("message").innerHTML =
@@ -89,7 +89,7 @@
                 }
                 if (count == pdfinput.files.length - 1) {
                   let newLst = sortList(listFiles);
-                  fbatch = fbatch + newLst;
+                  fbatch = fbatch + 'timeout 7' + newLst;
                   saveBatch(fbatch);
                 }
                 count += 1;
