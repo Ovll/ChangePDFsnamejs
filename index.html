@@ -4,48 +4,63 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PDF file name changer</title>
-    <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico" />
 
     <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"
-      integrity="sha512-ml/QKfG3+Yes6TwOzQb7aCNtJF4PUyha6R3w8pSTo/VJSywl7ZreYvvtUso7fKevpsI+pYVVwnu82YO0q3V6eg=="
+      src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+      integrity="sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ=="
       crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
+      referrerpolicy="no-referrer"></script>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
+      integrity="sha512-BbrZ76UNZq5BhH7LL7pn9A4TKQpQeNCHOo65/akfelcIBbcVvYWOFQKPXIrykE3qZxYjmDX573oa4Ywsc7rpTw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"></script>
 
     <style>
       h1 {
         width: 100%;
         text-align: center;
       }
-      .pdfwork {
+
+      .pdfwork,
+      .afterupload {
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: column;
         width: 100%;
       }
+
       .pdfwork * {
         margin-top: 5px;
       }
-      #message {
-        text-align: center;
+
+      .afterupload {
+        display: none;
       }
     </style>
   </head>
 
   <body>
-    <h1>PDF name changer ver0.01</h1>
+    <h1>PDF name changer</h1>
     <div class="pdfwork">
-      <input type="file" class="selectpdf" id="inpFiles" multiple />
-      <button class="upload">Implement changes</button>
+      <span>Select PDF</span>
+      <input type="file" class="selectpdf" id="inpFile" multiple />
+      <button class="upload">Upload</button>
     </div>
-    <div id="message"></div>
     <script>
       let pdfinput = document.querySelector("input[type=file]");
       let upload = document.querySelector(".upload");
+      let fbatch = "@ECHO OFF\n";
+      let listFiles = "";
+      let count = 0;
       upload.addEventListener("click", () => {
-        for (file of pdfinput.files) {
+        for (i in pdfinput.files) {
+          if (i == "length") {
+            break;
+          }
+          const file = pdfinput.files[i];
           if (file != undefined && file.type == "application/pdf") {
             const fr = new FileReader();
             fr.readAsDataURL(file);
@@ -54,11 +69,21 @@
               (async function () {
                 newName = await extractText(res);
                 if (newName) {
-                  await downloadFile(file, newName);
+                  fbatch += "ren " + file.name + " " + newName + ".pdf\n";
+                  listFiles +=
+                    '"C:\\Program Files (x86)\\Adobe\\Acrobat Reader DC\\Reader\\AcroRd32.exe" /N /T ' +
+                    newName +
+                    ".pdf" +
+                    " \\\\lgs-print01\\LGS-PRT-BRK16\n";
                 } else {
-                  document.getElementById("message").innerHTML =
-                    file.name + " doesn't include JPISO on first page";
+                  document.getElementById("message").innerHTML = file.name + " doesn't include JPISO on first page";
                 }
+                if (count == pdfinput.files.length - 1) {
+                  let newLst = sortList(listFiles);
+                  fbatch = fbatch + "timeout 13\n" + newLst;
+                  saveBatch(fbatch);
+                }
+                count += 1;
               })();
             };
           } else {
@@ -66,36 +91,48 @@
           }
         }
       });
+
       async function extractText(url) {
         let pdf;
         pdf = await pdfjsLib.getDocument(url).promise;
         let pages = pdf.numPages;
+        let name;
         for (let i = 1; i <= pages; i++) {
           let page = await pdf.getPage(i);
           let txt = await page.getTextContent();
           let text = txt.items.map((s) => s.str).join("");
-          let pos = text.indexOf("JPISO");
-          let name = text.substring(pos, pos + 11);
-          return name;
+          let pos = text.indexOf("JP58");
+          // if (text.charAt(pos + 12) == "D" || text.charAt(pos + 12) == "S") {
+          //   name = text.substring(pos, pos + 13);
+          // } else {
+          name = text.substring(pos, pos + 9);
+          // }
         }
+        return name;
       }
 
-      function downloadFile(blob, name) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        // This is required for one-off downloads of the blob content
-        const clickHandler = () => {
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-            removeEventListener("click", clickHandler);
-          }, 100);
-        };
-        // Add the click event listener on the anchor element
-        // Comment out this line if you don't want a one-off download of the blob content
-        a.addEventListener("click", clickHandler, false);
-        a.click();
+      function sortList(lst) {
+        let arr = lst.split("\n");
+        pos = arr[0].indexOf("JP58");
+        for (let j = 1; j < arr.length - 1; j++) {
+          let key = arr[j];
+          let i = j - 1;
+
+          while (i >= 0 && Number(arr[i].substring(pos + 6, pos + 9)) > Number(key.substring(pos + 6, pos + 9))) {
+            arr[i + 1] = arr[i];
+            i--;
+          }
+          arr[i + 1] = key;
+        }
+        return arr.join("\n");
+      }
+
+      function saveBatch(fbatch) {
+        const link = document.createElement("a");
+        link.download = "renPrint.bat";
+        const blob = new Blob([fbatch], { type: "text/plain" });
+        link.href = window.URL.createObjectURL(blob);
+        link.click();
       }
     </script>
   </body>
